@@ -1,0 +1,31 @@
+@charset "UTF-8";
+
+:root{
+	--panel-shadow:1px 1px 20px #aaaaaa;
+	--color: #333;
+}
+html{font-size:14px; background-color:#dddddd; height:100%; width:100%; padding:0;}
+body{height:100%; width:100%;}
+*{margin:0; padding:0; box-sizing:border-box}
+ul, li{list-style:none;}
+
+h1,
+h2{font-size:2rem; text-transform:uppercase; color:#666666; text-shadow:1px 1px 1px white;}
+h1{font-size:3rem; color:#333333; margin-bottom:0.5em;}
+
+.char-list{overflow:hidden; margin-bottom:2em;;}
+.char-list li{float:left; margin:10px; height:80px; position:relative}
+.char-list li .char-item{text-align:center; font-size:40px; background-color:#ffffff; box-shadow:1px 1px 5px #c3c3c3; border-radius:3px; display:block; min-width:60px; padding:0 10px; line-height:80px; height:100%; cursor:pointer; transition:all .1s linear; position:relative;}
+.char-list li:hover .char-item{background-color:#7991e0f9; color:white;}
+.char-list li .add-collection{display:none; border-radius:0 0 3px 3px; cursor:pointer; height:30px; line-height:30px; position:absolute; font-size:12px; color:#ffffff; background-color:#eeeeee77; bottom:0; left:0; width:100%; text-align:center;}
+.char-list li:hover .add-collection{display:block;}
+.char-list .add-collection:hover{background:#fffc; color:black;}
+
+.char {font-size:1.2rem; padding:0 0.2rem; display:inline-block; vertical-align:middle}
+
+.container{display:flex; height:100%; width:100%;}
+.content{flex:1; height:100%; overflow:auto; padding:1em 2em;}
+aside{flex:1; max-width:280px;height:100%; overflow:auto; background-color:#ededed; box-shadow:1px 1px 8px #bbbbbb}
+aside ul{padding:1em;}
+aside ul a{text-decoration:none; color:#333333; padding:0.25em 0; display:block}
+aside ul a:hover{color:#4c87d9;}
