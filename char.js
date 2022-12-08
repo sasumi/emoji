@@ -4,15 +4,15 @@ import {copy} from "./util.js";
 
 export const showCharContextMenu = (unicode, dimension) => {
 	showContextMenu([
-		[`Copy as character: <var class="char">${unicode}</var>`, ()=>{copy(unicode);}],
-		[`Copy as image: <var class="char">${unicode}</var>`, ()=>{copy(unicode);}],
+		[`Copy Character: <var class="char">${unicode}</var>`, ()=>{copy(unicode);}],
+		[`Copy Unicode: <var class="char">${escape(unicode).replace(/%/g, '\\')}</var>`, ()=>{copy(escape(unicode).replace(/%/g, '\\'));}],
+		[`Copy JS Code: <var class="char">${escape(unicode).replace(/%u([^%]+)/g, '\\u{$1}')}</var>`, ()=>{copy(escape(unicode).replace(/%u([^%]+)/g, '\\u{$1}'));}],
 		'-',
-		[`Add to collection`, ()=>{addCollection(unicode);}],
-		[`Remove from collection`, ()=>{removeFromCollection(unicode);}],
+		[`Add Collection`, ()=>{addCollection(unicode);}],
+		[`Remove Collection`, ()=>{removeFromCollection(unicode);}],
 	], dimension);
 }
 
 export const wrapCharacter = unicode =>{
 	return `<span class="char">${unicode}</span>`;
 }
-

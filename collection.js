@@ -48,11 +48,11 @@ collectionCon.addEventListener('contextmenu', e => {
 		], {left:e.clientX, top:e.clientY});
 	} else {
 		showContextMenu([
-			['Copy all as text', e => {
+			['Copy All As Text', e => {
 				copyAllCollection()
 			}],
 			'-',
-			['Clean collection', e => {
+			['Clean Collection', e => {
 				cleanCollection()
 			}]
 		], {left: e.clientX, top: e.clientY});

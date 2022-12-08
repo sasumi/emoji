@@ -2,12 +2,19 @@ export const copy = (text) => {
 	(async () => {
 		const {showInfo, showError} = await import('./toast.js');
 		navigator.clipboard.writeText(text).then(() => {
-			showInfo('Content copied: ' + text);
+			showInfo('Content Copied: ' + text);
 		}).catch(() => {
 			showError('Copy Failed');
 		});
 	})();
 };
+
+export const scrollToAnchor = (name)=>{
+	let n = document.querySelector(`a[name="${name}"]`);
+	if(n){
+		n.scrollIntoView({behavior: 'smooth'});
+	}
+}
 
 export const insertStyle = (styleSheetStr, id = '') => {
 	let style = document.createElement('style');

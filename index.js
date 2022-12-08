@@ -1,5 +1,5 @@
 import {EmojiList} from "./data.js";
-import {copy, createFragment} from "./util.js";
+import {copy, createFragment, scrollToAnchor} from "./util.js";
 import {showCharContextMenu} from "./char.js";
 import {addCollection} from "./collection.js";
 
@@ -19,6 +19,20 @@ for(let cat in EmojiList){
 asideHtml += '</ul>';
 document.querySelector('aside').appendChild(createFragment(asideHtml));
 document.querySelector('.content').appendChild(createFragment(html));
+
+if(document.location.hash){
+	scrollToAnchor(location.hash.substring(1));
+}
+
+document.querySelectorAll('aside ul a').forEach(a => {
+	if(a.hash[0] === '#'){
+		a.addEventListener('click', e=>{
+			scrollToAnchor(a.hash.substring(1));
+			e.preventDefault();
+			return false;
+		});
+	}
+})
 
 document.querySelectorAll('.char-list li').forEach(n => {
 	n.addEventListener('contextmenu', e => {
