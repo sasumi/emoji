@@ -2,7 +2,7 @@ import {showContextMenu} from "./context.js";
 import {addCollection, removeFromCollection} from "./collection.js";
 import {copy} from "./util.js";
 
-export const showCharContextMenu = (unicode, dimension) => {
+export const showCharContextMenu = (unicode, eventDimension) => {
 	showContextMenu([
 		[`Copy Character: <var class="char">${unicode}</var>`, ()=>{copy(unicode);}],
 		[`Copy Unicode: <var class="char">${escape(unicode).replace(/%/g, '\\')}</var>`, ()=>{copy(escape(unicode).replace(/%/g, '\\'));}],
@@ -10,7 +10,7 @@ export const showCharContextMenu = (unicode, dimension) => {
 		'-',
 		[`Add Collection`, ()=>{addCollection(unicode);}],
 		[`Remove Collection`, ()=>{removeFromCollection(unicode);}],
-	], dimension);
+	], eventDimension);
 }
 
 export const wrapCharacter = unicode =>{

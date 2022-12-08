@@ -45,7 +45,7 @@ collectionCon.addEventListener('contextmenu', e => {
 			[`Copy as image: <var class="char">${unicode}</var>`, ()=>{copy(unicode);}],
 			'-',
 			[`Remove from collection`, ()=>{removeFromCollection(unicode);}],
-		], {left:e.clientX, top:e.clientY});
+		], e);
 	} else {
 		showContextMenu([
 			['Copy All As Text', e => {
@@ -55,7 +55,7 @@ collectionCon.addEventListener('contextmenu', e => {
 			['Clean Collection', e => {
 				cleanCollection()
 			}]
-		], {left: e.clientX, top: e.clientY});
+		], e);
 	}
 });
 

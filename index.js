@@ -2,6 +2,7 @@ import {EmojiList} from "./data.js";
 import {copy, createFragment, scrollToAnchor} from "./util.js";
 import {showCharContextMenu} from "./char.js";
 import {addCollection} from "./collection.js";
+import { showContextMenu } from "./context.js";
 
 let html = '';
 let asideHtml = '<ul>';
@@ -32,11 +33,33 @@ document.querySelectorAll('aside ul a').forEach(a => {
 			return false;
 		});
 	}
-})
+});
+
+document.querySelectorAll('.char-list').forEach(n=>{
+	n.addEventListener('contextmenu', e=>{
+		if(e.target.matches('.char-list')){
+			showContextMenu([
+				['Add All To Collection',()=>{
+					e.target.querySelectorAll('.char-item').forEach(c=>{
+						addCollection(c.innerText);
+					});
+				}],
+				'-',
+				['Copy All To Text', ()=>{
+					let text = '';
+					e.target.querySelectorAll('.char-item').forEach(c=>{
+						text += c.innerText;
+					});
+					copy(text);
+				}]
+			], e);
+		}
+	})
+});
 
 document.querySelectorAll('.char-list li').forEach(n => {
 	n.addEventListener('contextmenu', e => {
-		showCharContextMenu(n.getAttribute('data-char'), {left: e.clientX, top: e.clientY});
+		showCharContextMenu(n.getAttribute('data-char'), e);
 	});
 });
 document.querySelectorAll('.char-list .char-item').forEach(n => {

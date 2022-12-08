@@ -14,9 +14,9 @@ insertStyle(`
 /**
  * 显示菜单
  * @param {Array} menuItems [[title, payload], '-', []]
- * @param dimension
+ * @param eventDimension
  */
-export const showContextMenu = (menuItems, dimension)=>{
+export const showContextMenu = (menuItems, eventDimension)=>{
 	context_showing = true;
 	setTimeout(() => {
 		context_showing = false;
@@ -51,8 +51,8 @@ export const showContextMenu = (menuItems, dimension)=>{
 	context.style.display = 'block';
 	let scrollLeft = document.body.parentNode.scrollLeft;
 	let scrollTop = document.body.parentNode.scrollTop;
-	let maxLeft = Math.min(scrollLeft + document.body.clientWidth - context.offsetWidth - 20, scrollLeft + dimension.left);
-	let maxTop = Math.min(scrollTop + document.body.clientHeight - context.offsetHeight - 20, scrollTop + dimension.top);
+	let maxLeft = Math.min(scrollLeft + document.body.clientWidth - context.offsetWidth - 20, scrollLeft + eventDimension.clientX);
+	let maxTop = Math.min(scrollTop + document.body.clientHeight - context.offsetHeight - 20, scrollTop + eventDimension.clientY);
 	context.style.left = maxLeft + 'px';
 	context.style.top = maxTop + 'px';
 	context.style.visibility = 'visible';

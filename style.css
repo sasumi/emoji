@@ -11,9 +11,11 @@ ul, li{list-style:none;}
 
 h1,
 h2{font-size:2rem; text-transform:uppercase; color:#666666; text-shadow:1px 1px 1px white;}
-h1{font-size:3rem; color:#333333; margin-bottom:0.5em;}
+h1{font-size:2rem; color:#333333; margin-bottom:0.5em;}
+h2{font-size: 1.5rem;;}
 
-.char-list{overflow:hidden; margin-bottom:2em;;}
+.char-list{overflow:hidden; margin-bottom:2em; background-color: #ddd; transition: all 0.1s linear;}
+.char-list:hover {background-color: #eee;}
 .char-list li{float:left; margin:10px; height:80px; position:relative}
 .char-list li .char-item{text-align:center; font-size:40px; background-color:#ffffff; box-shadow:1px 1px 5px #c3c3c3; border-radius:3px; display:block; min-width:60px; padding:0 10px; line-height:80px; height:100%; cursor:pointer; transition:all .1s linear; position:relative;}
 .char-list li:hover .char-item{background-color:#7991e0f9; color:white;}
