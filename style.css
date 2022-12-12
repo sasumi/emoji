@@ -13,6 +13,7 @@ h1,
 h2{font-size:2rem; text-transform:uppercase; color:#666666; text-shadow:1px 1px 1px white;}
 h1{font-size:2rem; color:#333333; margin-bottom:0.5em;}
 h2{font-size: 1.5rem;;}
+h2 a {color:#333; text-decoration: none;;}
 
 .char-list{overflow:hidden; margin-bottom:2em; background-color: #ddd; transition: all 0.1s linear;}
 .char-list:hover {background-color: #eee;}
