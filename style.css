@@ -1,34 +1,255 @@
 @charset "UTF-8";
 
-:root{
-	--panel-shadow:1px 1px 20px #aaaaaa;
+:root {
+	--panel-shadow: 1px 1px 20px #aaaaaa;
 	--color: #333;
 }
-html{font-size:14px; background-color:#dddddd; height:100%; width:100%; padding:0;}
-body{height:100%; width:100%;}
-*{margin:0; padding:0; box-sizing:border-box}
-ul, li{list-style:none;}
+
+html {
+	font-size: 14px;
+	background-color: #dddddd;
+	height: 100%;
+	width: 100%;
+	padding: 0;
+}
+
+body {
+	height: 100%;
+	width: 100%;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box
+}
+
+ul,
+li {
+	list-style: none;
+}
 
 h1,
-h2{font-size:2rem; text-transform:uppercase; color:#666666; text-shadow:1px 1px 1px white;}
-h1{font-size:2rem; color:#333333; margin-bottom:0.5em;}
-h2{font-size: 1.5rem;;}
-h2 a {color:#333; text-decoration: none;;}
+h2 {
+	font-size: 2rem;
+	text-transform: uppercase;
+	color: #666666;
+	text-shadow: 1px 1px 1px white;
+}
 
-.char-list{overflow:hidden; margin-bottom:2em; background-color: #ddd; transition: all 0.1s linear;}
-.char-list:hover {background-color: #eee;}
-.char-list li{float:left; margin:10px; height:80px; position:relative}
-.char-list li .char-item{text-align:center; font-size:40px; background-color:#ffffff; box-shadow:1px 1px 5px #c3c3c3; border-radius:3px; display:block; min-width:60px; padding:0 10px; line-height:80px; height:100%; cursor:pointer; transition:all .1s linear; position:relative;}
-.char-list li:hover .char-item{background-color:#7991e0f9; color:white;}
-.char-list li .add-collection{display:none; border-radius:0 0 3px 3px; cursor:pointer; height:30px; line-height:30px; position:absolute; font-size:12px; color:#ffffff; background-color:#eeeeee77; bottom:0; left:0; width:100%; text-align:center;}
-.char-list li:hover .add-collection{display:block;}
-.char-list .add-collection:hover{background:#fffc; color:black;}
+h1 {
+	font-size: 2rem;
+	color: #333333;
+	margin-bottom: 0.5em;
+}
 
-.char {font-size:1.2rem; padding:0 0.2rem; display:inline-block; vertical-align:middle}
+h2 {
+	font-size: 1.5rem;
+	;
+}
 
-.container{display:flex; height:100%; width:100%;}
-.content{flex:1; height:100%; overflow:auto; padding:1em 2em;}
-aside{flex:1; max-width:280px;height:100%; overflow:auto; background-color:#ededed; box-shadow:1px 1px 8px #bbbbbb}
-aside ul{padding:1em;}
-aside ul a{text-decoration:none; color:#333333; padding:0.25em 0; display:block}
-aside ul a:hover{color:#4c87d9;}
+h2 a {
+	color: #333;
+	text-decoration: none;
+	;
+}
+
+.char-list {
+	overflow: hidden;
+	margin-bottom: 2em;
+	background-color: #ddd;
+	transition: all 0.1s linear;
+}
+
+.char-list:hover {
+	background-color: #eee;
+}
+
+.char-list li {
+	float: left;
+	margin: 10px;
+	height: 80px;
+	position: relative
+}
+
+.char-list li .char-item {
+	text-align: center;
+	font-size: 40px;
+	background-color: #ffffff;
+	box-shadow: 1px 1px 5px #c3c3c3;
+	border-radius: 3px;
+	display: block;
+	min-width: 60px;
+	padding: 0 10px;
+	line-height: 80px;
+	height: 100%;
+	cursor: pointer;
+	transition: all .1s linear;
+	position: relative;
+}
+
+.char-list li:hover .char-item {
+	background-color: #7991e0f9;
+	color: white;
+}
+
+.char-list li .add-collection {
+	display: none;
+	border-radius: 0 0 3px 3px;
+	cursor: pointer;
+	height: 30px;
+	line-height: 30px;
+	position: absolute;
+	font-size: 12px;
+	color: #ffffff;
+	background-color: #eeeeee77;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	text-align: center;
+}
+
+.char-list li:hover .add-collection {
+	display: block;
+}
+
+.char-list .add-collection:hover {
+	background: #fffc;
+	color: black;
+}
+
+.char {
+	font-size: 1.2rem;
+	padding: 0 0.2rem;
+	display: inline-block;
+	vertical-align: middle
+}
+
+.char2png {
+	font-size: 3rem;
+	position: absolute;
+	bottom: 0;
+	left: -9999em;
+}
+
+.container {
+	display: flex;
+	height: 100%;
+	width: 100%;
+}
+
+.content {
+	flex: 1;
+	height: 100%;
+	overflow: auto;
+	padding: 1em 2em;
+}
+
+aside {
+	flex: 1;
+	max-width: 280px;
+	height: 100%;
+	overflow: auto;
+	background-color: #ededed;
+	box-shadow: 1px 1px 8px #bbbbbb
+}
+
+aside ul {
+	padding: 1em;
+}
+
+aside ul a {
+	text-decoration: none;
+	color: #333333;
+	padding: 0.25em 0;
+	display: block
+}
+
+aside ul a:hover {
+	color: #4c87d9;
+}
+
+.export-img {
+	display: flex;
+	padding: 1em 1em;
+	flex-direction: column;
+}
+
+.export-img>div {
+	flex: 1;
+	padding: 1em;
+	flex-wrap: wrap;
+}
+
+.export-option li {
+	padding: 0.25em 0.5em;
+}
+
+.export-option label:first-child {
+	display: inline-block;
+	min-width: 130px;
+}
+
+.export-option input {
+	vertical-align: middle;
+}
+
+.export-option input[type=number] {
+	width: 50px;
+}
+
+.export-option input[type=color] {border:none; margin:0; padding:0;}
+
+.transparent-btn {display:inline-block; vertical-align: middle; width:40px; height:20px; background:url("trans.jpg") no-repeat;}
+
+.export-preview {
+	--line-color: 100, 100, 100;
+	--grid-cell-size: 50px;
+	padding: 10px;
+	max-height: 250px;
+	display: flex;
+	width: var(--width);
+	height: var(--height);
+	min-height: 100px;
+	margin: 5px;
+	box-shadow: inset 1px 1px 7px 0px #a3a3a3;
+	background-color: #fff;
+	/* display: inline-block; */
+	overflow: hidden;
+	background-image:
+		linear-gradient(0deg, transparent 9%,
+			rgba(var(--line-color), .2) 10%, rgba(var(--line-color), .2) 12%, transparent 13%, transparent 29%,
+			rgba(var(--line-color), .1) 30%, rgba(var(--line-color), .1) 31%, transparent 32%, transparent 49%,
+			rgba(var(--line-color), .1) 50%, rgba(var(--line-color), .1) 51%, transparent 52%, transparent 69%,
+			rgba(var(--line-color), .1) 70%, rgba(var(--line-color), .1) 71%, transparent 72%, transparent 89%,
+			rgba(var(--line-color), .1) 90%, rgba(var(--line-color), .1) 91%, transparent 92%, transparent),
+		linear-gradient(90deg, transparent 9%,
+			rgba(var(--line-color), .2) 10%, rgba(var(--line-color), .2) 12%, transparent 13%, transparent 29%,
+			rgba(var(--line-color), .1) 30%, rgba(var(--line-color), .1) 31%, transparent 32%, transparent 49%,
+			rgba(var(--line-color), .1) 50%, rgba(var(--line-color), .1) 51%, transparent 52%, transparent 69%,
+			rgba(var(--line-color), .1) 70%, rgba(var(--line-color), .1) 71%, transparent 72%, transparent 89%,
+			rgba(var(--line-color), .1) 90%, rgba(var(--line-color), .1) 91%, transparent 92%, transparent);
+	background-size: var(--grid-cell-size) var(--grid-cell-size);
+	overflow: auto;
+}
+
+.export-preview var {
+	font-style: normal;
+	display: inline-block;
+	font-size: var(--img-size);
+	width: var(--img-size);
+	height: var(--img-size);
+	line-height: var(--img-size);
+	text-align: center;
+	box-sizing: border-box;
+	background-color: var(--bg-color);
+	border: 1px dashed black;
+	margin: 0.1em;
+}
+
+.export-preview var span {
+	display: inline-block;
+	width: 100%;
+	height: 100%;
+	transform: scale(calc(var(--font-percent)/100));
+}
