@@ -1,9 +1,9 @@
-import {createFragment, insertStyle} from "./util.js";
+import {createDomByHtml, insertStyleSheet} from "./webcom.es.js";
 
 let context;
 let context_showing = false;
 
-insertStyle(`
+insertStyleSheet(`
 	.context-menu{position:absolute; z-index:10; min-width:180px; padding:5px 0; border-radius:5px; background-color:#fffffff5; box-shadow:var(--panel-shadow);}
 	.context-menu .item-content{padding:0.5em 1em; display:block; cursor:pointer;}
 	.context-menu .item-content:hover{background-color:#eeeeee;}
@@ -35,7 +35,7 @@ export const showContextMenu = (menuItems, eventDimension)=>{
 	context.innerHTML = '';
 	menuItems.forEach(item=>{
 		if(item === '-'){
-			context.appendChild(createFragment('<li class="sep"></li>'));
+			context.appendChild(createDomByHtml('<li class="sep"></li>'));
 			return;
 		}
 		let [title, payload] = item;

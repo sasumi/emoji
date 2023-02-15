@@ -1,24 +1,9 @@
-import {
-	EmojiList
-} from "./data.js";
-import {
-	copy,
-	createFragment,
-	scrollToAnchor
-} from "./util.js";
-import {
-	showCharContextMenu,
-	exportAsImage
-} from "./char.js";
-import {
-	addCollection
-} from "./collection.js";
-import {
-	showContextMenu
-} from "./context.js";
-import {
-	showDialog
-} from "./dialog.js";
+import {EmojiList} from "./data.js";
+import {copy, scrollToAnchor} from "./util.js";
+import {exportAsImage, showCharContextMenu} from "./char.js";
+import {addCollection} from "./collection.js";
+import {showContextMenu} from "./context.js";
+import {createDomByHtml} from "./webcom.es.js";
 
 let html = '';
 let asideHtml = '<ul>';
@@ -34,8 +19,8 @@ for (let cat in EmojiList) {
 	html += `</ul>`;
 }
 asideHtml += '</ul>';
-document.querySelector('aside').appendChild(createFragment(asideHtml));
-document.querySelector('.content').appendChild(createFragment(html));
+document.querySelector('aside').appendChild(createDomByHtml(asideHtml));
+document.querySelector('.content').appendChild(createDomByHtml(`<div>${html}</div>`));
 
 if (document.location.hash) {
 	scrollToAnchor(location.hash.substring(1));
@@ -94,5 +79,3 @@ document.querySelectorAll('.char-list .add-collection').forEach(n => {
 		addCollection(n.parentNode.getAttribute('data-char'));
 	});
 });
-
-exportAsImage(['☺','☻','☹','〠','㋡','㋛','シ','ッ','ツ','ヅ','〲','〴','ϡ','ت']);

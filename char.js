@@ -1,16 +1,7 @@
-import {
-	showContextMenu
-} from "./context.js";
-import {
-	addCollection,
-	removeFromCollection
-} from "./collection.js";
-import {
-	copy, insertStyle
-} from "./util.js";
-import {
-	showDialog
-} from "./dialog.js";
+import {showContextMenu} from "./context.js";
+import {addCollection, removeFromCollection} from "./collection.js";
+import {copy} from "./util.js";
+import {Dialog} from "./webcom.es.js";
 
 const DEFAULT_COLOR = '#000000';
 const DEFAULT_BG_COLOR = '';
@@ -24,9 +15,7 @@ const MAX_EXPORT_FONT_PERCENT = 100;
 const DEFAULT_EXPORT_FONT_PERCENT = 80;
 
 export const exportAsImage = (unicodeList) => {
-	let dialog = showDialog({
-		title: 'Export as image',
-		content: `<div class="export-img">
+	let html = `<div class="export-img">
 					<ul class="export-option">
 						<li>
 							<label>Font Color:</label>
@@ -57,21 +46,22 @@ export const exportAsImage = (unicodeList) => {
 					<div class="export-preview" style="--img-size:${DEFAULT_EXPORT_IMG_SIZE}px; --font-percent:${DEFAULT_EXPORT_FONT_PERCENT}">
 						<var><span>${unicodeList.join('</span></var><var><span>')}<span></var>
 					</div>
-					</div>
-					<div class="dlg-operation">
-					<input type="button" class="qwc-button qwc-button-primary" value="Export PNG">
-					<input type="button" value="Close" class="qwc-button dialog-close">
-					</div>`,
-		width: 600
-	});
-	dialog.querySelector('.dialog-close').addEventListener('click', e=>{dialog.parentNode.removeChild(dialog)});
-	let preview = dialog.querySelector('.export-preview');
+				</div>`;
+	let dlg = Dialog.show('Export as image', html, {
+		buttons: [
+			{title:"Export PNG", callback:()=>{
 
-	dialog.querySelector('input[name="bgc"]').addEventListener('input', e=>{
+			}},
+			{title:"Close"}
+		],
+		width:600
+	});
+	let preview = dlg.dom.querySelector('.export-preview');
+	dlg.dom.querySelector('input[name="bgc"]').addEventListener('input', e=>{
 		preview.style.setProperty('--bg-color', e.target.value);
 	});
 
-	let inputs = dialog.querySelectorAll('input[rel]');
+	let inputs = dlg.dom.querySelectorAll('input[rel]');
 	inputs.forEach(input => {
 		input.addEventListener('input', e => {
 			let rel = input.getAttribute('rel');

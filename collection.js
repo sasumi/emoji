@@ -1,11 +1,11 @@
-import {copy, createFragment, insertStyle} from "./util.js";
-import {showInfo, showToast} from "./toast.js";
+import {copy} from "./util.js";
 import {wrapCharacter} from "./char.js";
 import {showContextMenu} from "./context.js";
+import {createDomByHtml, insertStyleSheet, Toast} from "./webcom.es.js";
 
 const COLL_KEY = 'collection';
 
-insertStyle(`
+insertStyleSheet(`
 	.collection{position:fixed; z-index:9; opacity:0.5; transition:all 0.3s linear; bottom:10px; right:30px; max-width:400px; box-shadow:var(--panel-shadow); background-color:#fffffff5; padding:.5em; display:flex; border-radius:40px;}
 	.collection.active{opacity:1; border-radius:5px;}
 	.collection dt{flex:1; max-width:35px; cursor:pointer;}
@@ -17,7 +17,7 @@ insertStyle(`
 	.collection [data-char]{font-size:1.5rem;}
 `);
 
-document.body.appendChild(createFragment(`
+document.body.appendChild(createDomByHtml(`
 <dl class="collection">
 	<dt title="Toggle"></dt>
 	<dd></dd>
@@ -30,7 +30,7 @@ document.body.appendChild(createFragment(`
  */
 let collectionCon = document.querySelector('.collection dd');
 (JSON.parse(localStorage.getItem(COLL_KEY)) || []).forEach(unicode => {
-	collectionCon.appendChild(createFragment(`<span data-char="${unicode}" title="click to copy">${unicode}</span>`));
+	collectionCon.appendChild(createDomByHtml(`<span data-char="${unicode}" title="click to copy">${unicode}</span>`));
 });
 
 document.querySelector('.collection dt').addEventListener('click', e => {
@@ -74,14 +74,14 @@ export const hideCollection = ()=>{
 }
 
 export const addCollection = (unicode) => {
-	showInfo('Added to collection: ' + wrapCharacter(unicode));
+	Toast.showSuccess('Added to collection: ' + wrapCharacter(unicode));
 	if(collectionCon.querySelector(`[data-char="${unicode}"]`)){
 		return;
 	}
 	let coll = JSON.parse(localStorage.getItem(COLL_KEY)) || [];
 	coll.push(unicode);
 	localStorage.setItem(COLL_KEY, JSON.stringify(coll));
-	collectionCon.appendChild(createFragment(`<span data-char="${unicode}" title="click to copy">${unicode}</span>`));
+	collectionCon.appendChild(createDomByHtml(`<span data-char="${unicode}" title="click to copy">${unicode}</span>`));
 };
 
 export const copyAllCollection = () => {
@@ -90,7 +90,7 @@ export const copyAllCollection = () => {
 	if(txt.length){
 		copy(txt);
 	}else{
-		showInfo('Collection empty');
+		Toast.showInfo('Collection empty');
 	}
 }
 
@@ -102,12 +102,12 @@ export const removeFromCollection = (unicode) => {
 	localStorage.setItem(COLL_KEY, JSON.stringify(coll));
 	let item = collectionCon.querySelector(`[data-char="${unicode}"]`);
 	item.parentNode.removeChild(item);
-	showToast(wrapCharacter(unicode) + ' removed from collection');
+	Toast.showSuccess(wrapCharacter(unicode) + ' removed from collection');
 };
 
 export const cleanCollection = () => {
 	collectionCon.innerHTML = '';
 	localStorage.setItem(COLL_KEY, JSON.stringify([]));
-	showToast('Collection Clean!');
+	Toast.showSuccess('Collection Clean!');
 	hideCollection();
 }
