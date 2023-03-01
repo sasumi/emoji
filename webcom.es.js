@@ -766,12 +766,33 @@ const hide = (dom) => {
 	dom.style.display = 'none';
 };
 
+/**
+ * @param {HTMLElement} dom
+ * @param dom
+ */
 const show = (dom) => {
 	dom.style.display = '';
 };
 
+/**
+ * @param {HTMLElement} dom
+ * @param toShow
+ */
 const toggle = (dom, toShow) => {
 	toShow ? show(dom) : hide(dom);
+};
+
+const getDomOffset = (target)=> {
+	let top = 0, left = 0;
+	while(target.offsetParent) {
+		top += target.offsetTop;
+		left += target.offsetLeft;
+		target = target.offsetParent;
+	}
+	return {
+		top: top,
+		left: left,
+	}
 };
 
 /**
@@ -787,6 +808,15 @@ const fireEvent = (el, event) => {
 	}else {
 		el.fireEvent("on" + event);
 	}
+};
+
+/**
+ * 判断元素是否为按钮
+ * @param {HTMLElement} el
+ */
+const isButton = (el)=>{
+	return el.tagName === 'BUTTON' ||
+		(el.tagName === 'INPUT' && ['button', 'reset', 'submit'].includes(el.getAttribute('type')));
 };
 
 /**
@@ -1081,7 +1111,7 @@ const createDomByHtml = (html, parentNode = null) => {
 };
 
 /**
- * Force repaint of element
+ * 强制重绘元素
  * @param {HTMLElement} element
  * @param {Number} delay
  */
@@ -1178,33 +1208,54 @@ const getElementValue = (el) => {
 };
 
 /**
+ * 表单元素校验
+ * @param {HTMLElement} dom
+ * @return boolean 是否校验通过
+ */
+const formValidate = (dom)=>{
+	let els = dom.querySelectorAll('input,textarea,select');
+	let pass = true;
+	els = Array.from(els).filter(el => !isButton(el));
+	Array.from(els).every(el => {
+		if(el.disabled){
+			return true;
+		}
+		if(!el.checkValidity()){
+			el.reportValidity();
+			pass = false;
+			return false;
+		}
+		return true;
+	});
+	return pass;
+};
+
+/**
  * 获取指定DOM节点下表单元素包含的表单数据，并以JSON方式组装。
  * 该函数过滤表单元素处于 disabled、缺少name等不合理情况
- * @param {Element} dom
+ * @param {HTMLElement} dom
  * @param {Boolean} validate
  * @returns {Object|null} 如果校验失败，则返回null
  */
 const formSerializeJSON = (dom, validate = true) => {
+	if(!formValidate(dom)){
+		return null;
+	}
 	let els = dom.querySelectorAll('input,textarea,select');
 	let data = {};
+	els = Array.from(els).filter(el => !isButton(el));
 	let err = Array.from(els).every(el => {
-		if(el.tagName === 'INPUT' && ['button', 'reset', 'submit'].includes(el.type)){
+		if(!el.name){
+			console.warn('element no legal for fetch form data');
 			return true;
-		}
-		if(el.disabled || !el.name){
-			console.warn('elemment no legal for fetch form data');
-			return true;
-		}
-		if(validate && !el.checkValidity()){
-			el.reportValidity();
-			return false;
 		}
 		let name = el.name;
 		let value = getElementValue(el);
 		if(value === null){
 			return true;
 		}
-		let isArr = dom.querySelectorAll(`input[name=${cssSelectorEscape(name)}]:not([type=radio]),textarea[name=${cssSelectorEscape(name)}],select[name=${cssSelectorEscape(name)}]`).length > 1;
+		let name_selector = cssSelectorEscape(name);
+		let isArr = dom.querySelectorAll(`input[name=${name_selector}]:not([type=radio]),textarea[name=${name_selector}],select[name=${name_selector}]`).length > 1;
 		if(isArr){
 			if(data[name] === undefined){
 				data[name] = [value];
@@ -1953,13 +2004,13 @@ window.WEBCOM_GET_SCRIPT_ENTRY = getLibEntryScript;
 
 const NS$1 = 'WebCom-';
 const ICON_FONT_CLASS = NS$1 + `icon`;
-const ICON_FONT = NS$1+'iconfont';
+const ICON_FONT = NS$1 + 'iconfont';
 const DEFAULT_ICONFONT_CSS = `
 @font-face {
   font-family: "${ICON_FONT}"; /* Project id 3359671 */
-  src: url('//at.alicdn.com/t/font_3359671_iu2uo75bqf.woff2?t=1651059735967') format('woff2'),
-       url('//at.alicdn.com/t/font_3359671_iu2uo75bqf.woff?t=1651059735967') format('woff'),
-       url('//at.alicdn.com/t/font_3359671_iu2uo75bqf.ttf?t=1651059735967') format('truetype');
+  src: url('//at.alicdn.com/t/c/font_3359671_tnam7ajg9ua.woff2?t=1677307651902') format('woff2'),
+       url('//at.alicdn.com/t/c/font_3359671_tnam7ajg9ua.woff?t=1677307651902') format('woff'),
+       url('//at.alicdn.com/t/c/font_3359671_tnam7ajg9ua.ttf?t=1677307651902') format('truetype');
 }
 
 .${ICON_FONT_CLASS} {
@@ -1976,51 +2027,44 @@ const Theme = {
 	Namespace: NS$1,
 	IconFont: ICON_FONT,
 	IconFontClass: ICON_FONT_CLASS,
-	TipIndex: 10, //提示类
-	ToastIndex: 10000, //对话消息
+	TipIndex: 10, //功能提示类(指向具体元素)
+	MaskIndex: 100, //遮罩(（全局或指定面板遮罩类）
 	DialogIndex: 1000, //对话框等窗口类垂直索引
-	MaskIndex: 100, //遮罩
-	FullScreenModeIndex: 10000 //全屏类
+	FullScreenModeIndex: 10000, //全屏类（全屏类
+	ToastIndex: 100000, //消息提示（顶部呈现）
 };
 
 const TOAST_CLS_MAIN = Theme.Namespace + 'toast';
-const rotate_id = 'rotate111';
+const rotate_animate = Theme.Namespace + '-toast-rotate';
+const fadeIn_animate = Theme.Namespace + '-toast-fadein';
+const fadeOut_animate = Theme.Namespace + '-toast-fadeout';
+const FADEIN_TIME = 200;
+const FADEOUT_TIME = 500;
 
 insertStyleSheet(`
-	@keyframes ${rotate_id} {
-		0% {
-			transform: translate3d(-50%, -50%, 0) rotate(0deg);
-		}
-		100% {
-		transform: translate3d(-50%, -50%, 0) rotate(360deg);
-		}
+	@keyframes ${rotate_animate} {
+	    0% {transform: translate3d(-50%, -50%, 0) rotate(0deg);}
+	    100% {transform: translate3d(-50%, -50%, 0) rotate(360deg);}
+	}
+	@keyframes ${fadeIn_animate} {
+		0% { opacity: 0; }
+		100% { opacity: 1; } 
+	}
+	@keyframes ${fadeOut_animate} {
+		0% { opacity:1;}
+		100% { opacity: 0} 
 	}
 	.${TOAST_CLS_MAIN}-wrap{position:fixed; top:5px; width:100%; height:0; text-align:center; line-height:1.5; z-index:${Theme.ToastIndex}}
 	.${TOAST_CLS_MAIN}>div {margin-bottom:0.5em;}
-	.${TOAST_CLS_MAIN} .ctn{display:inline-block; border-radius:3px; padding:.75em 3em .75em 2em; background-color:#fff; color:var(--color); border:1px solid #ccc}
-	.${TOAST_CLS_MAIN} .close{color:gray; line-height:1}
-	.${TOAST_CLS_MAIN} .close:before{content:"×"; font-size:25px; cursor:pointer; position:absolute; margin:6px 0 0 -30px; transition:all 0.1s linear;}
-	.${TOAST_CLS_MAIN} .close:hover{color:var(--color);}
-
-	.${TOAST_CLS_MAIN}-success .ctn {color:#26b524;}
-
-	.${TOAST_CLS_MAIN}-error .ctn{color:red; position:relative;}
-	.${TOAST_CLS_MAIN}-loading .ctn {padding-left:3.5em;}
-	.${TOAST_CLS_MAIN}-loading .ctn:before {
-		animation: 1.5s linear infinite ${rotate_id};
-        animation-play-state: inherit;
-        border: solid 3px #cfd0d1;
-        border-bottom-color: #1c87c9;
-        border-radius: 50%;
-        content: "";
-        height: 1.2em;
-        width: 1.2em;
-		margin:10px 0 0 -20px;
-        position: absolute;
-        transform: translate3d(-50%, -50%, 0);
-        will-change: transform;
-	}
-`);
+	.${TOAST_CLS_MAIN} .ctn{display:inline-block;border-radius:3px;padding: 7px 15px 7px 35px;background-color:#fff;color:var(--color);box-shadow:4px 5px 13px 0px #32323238;position: relative; animation:${fadeIn_animate} ${FADEIN_TIME}ms}
+	.${TOAST_CLS_MAIN} .ctn:before {content:"";position:absolute;font-family:${Theme.IconFont}; left: 10px;top:8px;font-size: 20px;width: 20px;height: 20px;overflow: hidden;line-height: 1;box-sizing: border-box;}
+	.${TOAST_CLS_MAIN}-hide .ctn {animation:${fadeOut_animate} ${FADEOUT_TIME}ms; animation-fill-mode:forwards}
+	.${TOAST_CLS_MAIN}-info .ctn:before {content:"\\e77e";color: gray;}
+	.${TOAST_CLS_MAIN}-warning .ctn:before {content:"\\e673"; color:orange}
+	.${TOAST_CLS_MAIN}-success .ctn:before {content:"\\e78d"; color:#007ffc}
+	.${TOAST_CLS_MAIN}-error .ctn:before {content: "\\e6c6"; color:red;}
+	.${TOAST_CLS_MAIN}-loading .ctn:before {content:"\\e635";color:gray;animation: 1.5s linear infinite ${rotate_animate};animation-play-state: inherit;transform: translate3d(-50%, -50%, 0);will-change: transform;margin: 8px 0 0 8px;}
+`, Theme.Namespace + 'toast');
 
 let toastWrap = null;
 
@@ -2040,13 +2084,16 @@ class Toast {
 	static TYPE_ERROR = 'error';
 	static TYPE_LOADING = 'loading';
 
+	/**
+	 * 各种类型提示默认隐藏时间
+	 */
 	static DEFAULT_TIME_MAP = {
 		[Toast.TYPE_INFO]: 1500,
 		[Toast.TYPE_SUCCESS]: 1500,
 		[Toast.TYPE_WARNING]: 2000,
 		[Toast.TYPE_ERROR]: 2500,
-		[Toast.TYPE_LOADING]: 10000,
-	}
+		[Toast.TYPE_LOADING]: 0,
+	};
 
 	message = '';
 	type = Toast.TYPE_INFO;
@@ -2070,56 +2117,96 @@ class Toast {
 	 * @param {String} message
 	 * @param {String} type
 	 * @param {Number} timeout 超时时间，0表示不关闭
+	 * @param {Function} timeoutCallback 超时关闭回调
 	 * @returns
 	 */
-	static showToast = (message, type = null, timeout = null) => {
+	static showToast = (message, type = null, timeout = null, timeoutCallback = null) => {
 		let toast = new Toast(message, type, timeout);
-		toast.show();
+		toast.show(timeoutCallback);
 		return toast;
 	}
 
-	static showInfo = (message) => {
-		return this.showToast(message, Toast.TYPE_INFO, this.DEFAULT_TIME_MAP[Toast.TYPE_INFO]);
+	/**
+	 * 显示[提示]
+	 * @param {String} message
+	 * @param {Function} timeoutCallback 超时关闭回调
+	 * @return {Toast}
+	 */
+	static showInfo = (message, timeoutCallback = null) => {
+		return this.showToast(message, Toast.TYPE_INFO, this.DEFAULT_TIME_MAP[Toast.TYPE_INFO], timeoutCallback);
 	}
 
-	static showSuccess = (message) => {
-		return this.showToast(message, Toast.TYPE_SUCCESS, this.DEFAULT_TIME_MAP[Toast.TYPE_SUCCESS]);
+	/**
+	 * 显示[成功]
+	 * @param {String} message
+	 * @param {Function} timeoutCallback 超时关闭回调
+	 * @return {Toast}
+	 */
+	static showSuccess = (message, timeoutCallback = null) => {
+		return this.showToast(message, Toast.TYPE_SUCCESS, this.DEFAULT_TIME_MAP[Toast.TYPE_SUCCESS], timeoutCallback);
 	}
 
-	static showWarning = (message) => {
-		return this.showToast(message, Toast.TYPE_WARNING, this.DEFAULT_TIME_MAP[Toast.TYPE_WARNING]);
+	/**
+	 * 显示[告警]
+	 * @param {String} message
+	 * @param {Function} timeoutCallback 超时关闭回调
+	 * @return {Toast}
+	 */
+	static showWarning = (message, timeoutCallback = null) => {
+		return this.showToast(message, Toast.TYPE_WARNING, this.DEFAULT_TIME_MAP[Toast.TYPE_WARNING], timeoutCallback);
 	}
 
-	static showError = (message) => {
-		return this.showToast(message, Toast.TYPE_ERROR, this.DEFAULT_TIME_MAP[Toast.TYPE_ERROR]);
+	/**
+	 * 显示[错误]
+	 * @param {String} message
+	 * @param {Function} timeoutCallback 超时关闭回调
+	 * @return {Toast}
+	 */
+	static showError = (message, timeoutCallback = null) => {
+		return this.showToast(message, Toast.TYPE_ERROR, this.DEFAULT_TIME_MAP[Toast.TYPE_ERROR], timeoutCallback);
 	}
 
-	static showLoading = (message) => {
-		return this.showToast(message, Toast.TYPE_LOADING, this.DEFAULT_TIME_MAP[Toast.TYPE_LOADING]);
+	/**
+	 * 显示[加载中]
+	 * @param {String} message
+	 * @param {Function} timeoutCallback 超时关闭回调
+	 * @return {Toast}
+	 */
+	static showLoading = (message, timeoutCallback = null) => {
+		return this.showToast(message, Toast.TYPE_LOADING, this.DEFAULT_TIME_MAP[Toast.TYPE_LOADING], timeoutCallback);
 	}
 
-	show(){
+	/**
+	 * 显示提示
+	 * @param {Function} onTimeoutClose 超时关闭回调
+	 */
+	show(onTimeoutClose = null){
 		let wrapper = getWrapper();
 		show(wrapper);
 		this.dom = document.createElement('span');
 		wrapper.appendChild(this.dom);
 		this.dom.className = `${TOAST_CLS_MAIN} ${TOAST_CLS_MAIN}-` + this.type;
-		this.dom.innerHTML = `<span class="ctn">${this.message}</span><span class="close"></span><div></div>`;
-
-		let hide_tm = null;
+		this.dom.innerHTML = `<span class="ctn">${this.message}</span><div></div>`;
 		if(this.timeout){
-			hide_tm = setTimeout(() => {
-				this.hide();
+			setTimeout(() => {
+				this.hide(true);
+				onTimeoutClose && onTimeoutClose();
 			}, this.timeout);
 		}
-
-		this.dom.querySelector('.close').addEventListener('click', ()=> {
-			hide_tm && clearTimeout(hide_tm);
-			this.hide();
-		});
 	}
 
-	hide(){
+	/**
+	 * 隐藏提示信息
+	 * @param {Boolean} fadeOut 是否使用渐隐式淡出
+	 */
+	hide(fadeOut = false){
+		if(fadeOut){
+			this.dom.classList.add(TOAST_CLS_MAIN+'-hide');
+			setTimeout(()=>{
+				this.hide(false);
+			}, FADEOUT_TIME);
+			return;
+		}
 		this.dom.parentNode.removeChild(this.dom);
 		let wrapper = getWrapper();
 		if(!wrapper.childNodes.length){
@@ -2193,7 +2280,7 @@ const copyFormatted = (html, silent = false) => {
 };
 
 let masker = null;
-let CSS_CLASS = 'dialog-masker';
+let CSS_CLASS = Theme.Namespace+'-masker';
 
 const showMasker = () => {
 	if(!masker){
@@ -2212,10 +2299,10 @@ const Masker = {
 	hide: hideMasker
 };
 
-insertStyleSheet(`.${CSS_CLASS} {position:fixed;top:0;left:0;right:0;bottom:0;background:#33333342; z-index:${Masker.zIndex}}`, Theme.Namespace+'masker-style');
+insertStyleSheet(`.${CSS_CLASS} {position:fixed;top:0;left:0;right:0;bottom:0;background:#33333342;backdrop-filter:blur(5px);
+ z-index:${Masker.zIndex}}`, Theme.Namespace+'masker-style');
 
 const DLG_CLS_PREF = Theme.Namespace + 'dialog';
-const DLG_CLS_ACTIVE = DLG_CLS_PREF + '-active';
 const DLG_CLS_TI = DLG_CLS_PREF + '-ti';
 const DLG_CLS_CTN = DLG_CLS_PREF + '-ctn';
 const DLG_CLS_OP = DLG_CLS_PREF + '-op';
@@ -2225,6 +2312,10 @@ const DLG_CLS_INPUT = DLG_CLS_PREF + '-input';
 
 const IFRAME_ID_ATTR_FLAG = 'data-dialog-flag';
 
+const STATE_ACTIVE = 'active'; //激活状态。如果是存在模态对话框，只允许唯一一个激活，如果没有模态对话框情况，允许多个同时激活
+const STATE_DISABLED = 'disabled'; //禁用状态。存在模态框情况下，全局只允许唯一一个激活，其余均为禁用状态
+const STATE_HIDDEN = 'hidden'; //隐藏状态。通过主动调用hide方法使得对话框隐藏
+
 /**
  * Content Type
  * @type {string}
@@ -2233,7 +2324,7 @@ const DLG_CTN_TYPE_IFRAME = DLG_CLS_PREF + '-ctn-iframe';
 const DLG_CTN_TYPE_HTML = DLG_CLS_PREF + '-ctn-html';
 
 insertStyleSheet(`
-	.${DLG_CLS_PREF} {display:block;border:1px solid #ddd; padding:0; box-sizing:border-box;width:calc(100% - 2 * 30px); --head-height:36px; background-color:white; color:#333; z-index:10000;position:fixed;}
+	.${DLG_CLS_PREF} {display:block;border:1px solid #ddd; padding:0; box-sizing:border-box;width:calc(100% - 2 * 30px); --head-height:36px; background-color:white; color:#333; z-index:${Theme.DialogIndex};position:fixed;}
 	.${DLG_CLS_PREF} .${DLG_CLS_PREF}-ti {font-size :16px; user-select:none; height:var(--head-height); box-sizing:border-box; padding:6px 10px 0 10px; font-weight:normal;color:#666}
 	.${DLG_CLS_PREF} .${DLG_CLS_TOP_CLOSE} {position:absolute; overflow:hidden; cursor:pointer; right:0; top:0; width:var(--head-height); height:var(--head-height); box-sizing:border-box; line-height:var(--head-height); text-align:center;}
 	.${DLG_CLS_PREF} .${DLG_CLS_TOP_CLOSE}:after {content:"×"; font-size:24px;}
@@ -2243,37 +2334,89 @@ insertStyleSheet(`
 	.${DLG_CLS_PREF} .${DLG_CTN_TYPE_IFRAME} iframe {width:100%; border:none; display:block;}
 	.${DLG_CLS_PREF} .${DLG_CLS_OP} {padding:10px; text-align:right;}
 	.${DLG_CLS_PREF} .${DLG_CLS_BTN} {margin-right:0.5em;}
-	.${DLG_CLS_PREF} .${DLG_CTN_TYPE_IFRAME} iframe {border:none; width:100%;}
 	.${DLG_CLS_PREF}.full-dialog .${DLG_CLS_CTN} {max-height:calc(100vh - 50px); overflow-y:auto}
-	.${DLG_CLS_PREF}.${DLG_CLS_ACTIVE} {box-shadow:1px 1px 25px 0px #44444457; border-color:#aaa;}
-	.${DLG_CLS_PREF}.${DLG_CLS_ACTIVE} .dialog-ti {color:#333}
+	.${DLG_CLS_PREF}[data-dialog-state="${STATE_ACTIVE}"] {box-shadow:1px 1px 25px 0px #44444457; border-color:#ccc;}
+	.${DLG_CLS_PREF}[data-dialog-state="${STATE_ACTIVE}"] .dialog-ti {color:#333}
+	.${DLG_CLS_PREF}[data-dialog-state="${STATE_DISABLED}"]:before {content:""; position:absolute; z-index:9999999999; width:100%; height:100%;}
+	.${DLG_CLS_PREF}[data-dialog-state="${STATE_DISABLED}"] * {opacity:0.85 !important; user-select:none;}
 `, Theme.Namespace + 'dialog-style');
 
-/** @var Dialog[] **/
-let dialogs = [];
+/**
+ * 绑定ESC按键事件关闭最上一层可关闭的对话框
+ */
+document.addEventListener('keyup', e => {
+	if(e.keyCode === KEYS.Esc){
+		let current = DialogManager.getFrontDialog();
+		if(current && current.config.showTopCloseButton){
+			DialogManager.close(current);
+			return false;
+		}
+	}
+});
 
-let closeDlg = (dlg, destroy = true) => {
-	if(dlg.onClose.fire() === false){
-		console.warn('dialog close cancel by onClose events');
-		return false;
-	}
-	dialogs = dialogs.filter(d => dlg !== d);
-	let nextShow = dialogs.find(d => d.active);
-	if(!nextShow){
-		nextShow = dialogs.find(d => d.visible);
-	}
-	if(nextShow){
-		DialogManager.show(nextShow);
-	}else {
-		Masker.hide();
-	}
-	if(destroy){
-		dlg.dom.parentNode.removeChild(dlg.dom);
-	}else {
-		dlg.active = false;
-		dlg.visible = false;
-		dlg.dom.style.display = 'none';
-	}
+/** @var Dialog[] **/
+let DIALOG_COLLECTION = [];
+
+const sortZIndex = (dialog1, dialog2) => {
+	return dialog1.zIndex - dialog2.zIndex;
+};
+
+/**
+ * 获取非隐藏的模态对话框列表
+ * 顺序由底到上排列
+ * @param {Dialog|null} excludedDialog 排除在外的对话框
+ * @return {Dialog[]}
+ */
+const getModalDialogs = (excludedDialog = null) => {
+	let list = DIALOG_COLLECTION.filter(d => {
+		return d.state !== STATE_HIDDEN && d.config.modal && (!excludedDialog || d !== excludedDialog);
+	});
+	return list.sort(sortZIndex);
+};
+
+/**
+ * 获取非隐藏的普通对话框列表
+ * 顺序由底到上排列
+ * @param {Dialog|null} excludedDialog 排除在外的对话框
+ * @return {Dialog[]}
+ */
+const getNoModalDialogs = (excludedDialog = null) => {
+	let list = DIALOG_COLLECTION.filter(d => {
+		return d.state !== STATE_HIDDEN && !d.config.modal && (!excludedDialog || d !== excludedDialog);
+	});
+	return list.sort(sortZIndex);
+};
+
+/**
+ * 获取所有非隐藏对话框
+ * 顺序由底到上排列
+ * @param {Dialog|null} excludedDialog 排除在外的对话框
+ * @return {*[]}
+ */
+const getAllAvailableDialogs = (excludedDialog = null) => {
+	let modalDialogs = getModalDialogs(excludedDialog);
+	let noModalDialogs = getNoModalDialogs(excludedDialog);
+	return noModalDialogs.concat(modalDialogs);
+};
+
+/**
+ * 设置对话框状态
+ * @param {Dialog} dlg
+ * @param {String} state
+ */
+const setState = (dlg, state) => {
+	dlg.state = state;
+	dlg.dom.setAttribute('data-dialog-state', state);
+	dlg.dom.style.display = state === STATE_HIDDEN ? 'none' : '';
+};
+
+/**
+ * 设置对话框zIndex
+ * @param {Dialog} dlg
+ * @param {Number|String} zIndex
+ */
+const setZIndex = (dlg, zIndex) => {
+	dlg.zIndex = dlg.dom.style.zIndex = String(zIndex);
 };
 
 /**
@@ -2281,7 +2424,7 @@ let closeDlg = (dlg, destroy = true) => {
  */
 const DialogManager = {
 	register(dlg){
-		dialogs.push(dlg);
+		DIALOG_COLLECTION.push(dlg);
 	},
 
 	/**
@@ -2290,36 +2433,52 @@ const DialogManager = {
 	 */
 	show(dlg){
 		Masker.show();
-		dlg.visible = true;
-		dlg.dom.style.display = '';
-		DialogManager.active(dlg);
-		dlg.onShow.fire();
-	},
+		dlg.state = STATE_DISABLED; //避免 getModalxx 获取不到当前对话框
 
-	/**
-	 * 激活对话框
-	 * @param {Dialog} dlg
-	 */
-	active(dlg){
-		let zIndex = Dialog.DIALOG_INIT_Z_INDEX;
-		dialogs.filter(d => {
-			if(d !== dlg){
-				d.active = false;
-				d.dom.classList.remove(DLG_CLS_ACTIVE);
-				d.dom.style.zIndex = zIndex++ + '';
-				return true;
-			}
-			return false;
-		});
-		dlg.active = true;
-		dlg.dom.style.zIndex = zIndex++ + '';
-		dlg.dom.classList.add(DLG_CLS_ACTIVE);
+		let modalDialogs = getModalDialogs(dlg);
+		let noModalDialogs = getNoModalDialogs(dlg);
+		if(dlg.config.modal){
+			noModalDialogs.forEach(d => {setState(d, STATE_DISABLED);});
+			modalDialogs.forEach(d => {setState(d, STATE_DISABLED);});
+			setZIndex(dlg, Dialog.DIALOG_INIT_Z_INDEX + noModalDialogs.length + modalDialogs.length);
+			setState(dlg, STATE_ACTIVE);
+		}else {
+			modalDialogs.forEach((d, idx) => {setZIndex(d, dlg.zIndex + idx + 1);});
+			setZIndex(dlg, Dialog.DIALOG_INIT_Z_INDEX + noModalDialogs.length);
+			setState(dlg, modalDialogs.length ? STATE_DISABLED : STATE_ACTIVE);
+		}
+		dlg.onShow.fire();
 	},
 
 	/**
 	 * 关闭对话框
 	 */
-	close: closeDlg,
+	close: (dlg, destroy = true) => {
+		if(dlg.onClose.fire() === false){
+			console.warn('dialog close cancel by onClose events');
+			return false;
+		}
+		let modalDialogs = getModalDialogs(dlg);
+		let noModalDialogs = getNoModalDialogs(dlg);
+		modalDialogs.forEach((d, idx) => {
+			setZIndex(d, Dialog.DIALOG_INIT_Z_INDEX + noModalDialogs.length + idx);
+		});
+		//active last modal dialog
+		if(modalDialogs.length){
+			setState(modalDialogs[modalDialogs.length - 1], STATE_ACTIVE);
+		}
+		noModalDialogs.forEach((d, idx) => {
+			setZIndex(d, Dialog.DIALOG_INIT_Z_INDEX + idx);
+			setState(d, modalDialogs.length ? STATE_DISABLED : STATE_ACTIVE);
+		});
+		if(destroy){
+			DIALOG_COLLECTION = DIALOG_COLLECTION.filter(d => d !== dlg);
+			dlg.dom.parentNode.removeChild(dlg.dom);
+		}else {
+			setState(dlg, STATE_HIDDEN);
+		}
+		getAllAvailableDialogs().length || Masker.hide();
+	},
 
 	/**
 	 * 隐藏对话框
@@ -2327,27 +2486,47 @@ const DialogManager = {
 	 * @returns {boolean}
 	 */
 	hide(dlg){
-		return closeDlg(dlg, false);
+		return this.close(dlg, false);
 	},
 
 	/**
 	 * 获取当前激活的对话框
 	 * @returns {Dialog|null}
 	 */
-	getCurrentActive(){
-		for(let i = dialogs.length - 1; i >= 0; i--){
-			if(dialogs[i].active){
-				return dialogs[i];
-			}
+	getFrontDialog(){
+		let dialogs = getAllAvailableDialogs();
+		return dialogs[dialogs.length - 1];
+	},
+
+	trySetFront(dlg){
+		let modalDialogs = getModalDialogs();
+		let currentFrontDialog = this.getFrontDialog();
+
+		if(currentFrontDialog === dlg){
+			return true;
 		}
-		return null;
+
+		//模态模式下，不允许通过该方法切换对话框，
+		//只有在对话框 show、hide的情况下自动调整层级
+		if(modalDialogs.length){
+			return false;
+		}
+
+		let otherNoModalDialogs = getNoModalDialogs(dlg);
+		otherNoModalDialogs.forEach((d, idx) => {
+			setZIndex(d, Dialog.DIALOG_INIT_Z_INDEX + idx);
+		});
+		setZIndex(dlg, Dialog.DIALOG_INIT_Z_INDEX + otherNoModalDialogs.length);
 	},
 
 	/**
 	 * 关闭全部对话框
 	 */
 	closeAll(){
-		dialogs.forEach(dlg => DialogManager.close(dlg));
+		DIALOG_COLLECTION.forEach(dlg => {
+			dlg.dom?.parentNode.removeChild(dlg.dom);
+		});
+		DIALOG_COLLECTION = [];
 		Masker.hide();
 	},
 
@@ -2357,8 +2536,8 @@ const DialogManager = {
 	 * @returns {Dialog}
 	 */
 	findById(id){
-		return dialogs.find(dlg => {
-			return dlg.id === id
+		return DIALOG_COLLECTION.find(dlg => {
+			return dlg.config.id === id
 		});
 	}
 };
@@ -2377,7 +2556,9 @@ const resolveContentType = (content) => {
  */
 const domConstruct = (dlg) => {
 	let html = `
-		<div class="${DLG_CLS_PREF}" id="${dlg.config.id}" style="${dlg.config.width ? 'width:' + dlg.config.width + 'px' : ''}">
+		<div class="${DLG_CLS_PREF}" 
+			id="${dlg.config.id}" 
+			style="${dlg.hidden ? 'display:none' : ''}; ${dlg.config.width ? 'width:' + dimension2Style(dlg.config.width) : ''}">
 		${dlg.config.title ? `<div class="${DLG_CLS_TI}">${dlg.config.title}</div>` : ''}
 		${dlg.config.showTopCloseButton ? `<span class="${DLG_CLS_TOP_CLOSE}" tabindex="0"></span>` : ''}
 	`;
@@ -2425,8 +2606,12 @@ const domConstruct = (dlg) => {
  * 事件绑定
  * @param {Dialog} dlg
  */
-let _bind_esc = false;
 const eventBind = (dlg) => {
+	//bind dialog active
+	dlg.dom.addEventListener('mousedown', () => {
+		dlg.state === STATE_ACTIVE && DialogManager.trySetFront(dlg);
+	});
+
 	//bind buttons event
 	for(let i in dlg.config.buttons){
 		let cb = dlg.config.buttons[i].callback || dlg.close;
@@ -2462,37 +2647,30 @@ const eventBind = (dlg) => {
 		buttonActiveBind(close_btn, dlg.close.bind(dlg));
 	}
 
-	//bind window resize
-	if(!dlg.config.moveAble){
-		window.addEventListener('resize', () => {
-			updatePosition$1(dlg);
-		});
-	}
-
-	//bind esc to close current active dialog
-	if(!_bind_esc){
-		_bind_esc = true;
-		document.addEventListener('keyup', e => {
-			if(e.keyCode === KEYS.Esc){
-				let current = DialogManager.getCurrentActive();
-				if(current && current.config.showTopCloseButton){
-					DialogManager.close(current);
-					return false;
-				}
-			}
-		});
-	}
+	//bind window resize un-move-able dialog
+	!dlg.config.moveAble && window.addEventListener('resize', () => {
+		updatePosition$1(dlg);
+	});
 };
 
 /**
- *
+ * 更新对话框位置
  * @param {Dialog} dlg
  */
 const updatePosition$1 = (dlg) => {
-	let [ml, mt] = keepRectCenter(dlg.dom.offsetWidth, dlg.dom.offsetHeight);
+	let _hidden = dlg.state === STATE_HIDDEN;
+	let ml, mt;
+	if(!_hidden){
+		[ml, mt] = keepRectCenter(dlg.dom.offsetWidth, dlg.dom.offsetHeight);
+	}else {
+		dlg.dom.style.visibility = 'hidden';
+		dlg.dom.style.display = 'block';
+		[ml, mt] = keepRectCenter(dlg.dom.offsetWidth, dlg.dom.offsetHeight);
+		dlg.dom.style.display = 'none';
+		dlg.dom.style.visibility = 'visible';
+	}
 	dlg.dom.style.top = mt + 'px';
 	dlg.dom.style.left = ml + 'px';
-	dlg.dom.style.visibility = 'visible';
 };
 
 /**
@@ -2532,22 +2710,22 @@ const renderContent = (dlg) => {
 
 class Dialog {
 	static CONTENT_MIN_HEIGHT = 30; //最小高度
-	static DEFAULT_WIDTH = 600; //默认宽度
-	static DIALOG_INIT_Z_INDEX = 1000;
+	static DEFAULT_WIDTH = 500; //默认宽度
+	static DIALOG_INIT_Z_INDEX = Theme.DialogIndex;
 
 	id = null;
 
 	/** @var {HTMLElement} dom **/
 	dom = null;
 
-	visible = false;
-	active = false;
+	state = STATE_HIDDEN;
+	zIndex = Theme.DialogIndex;
 
 	onClose = new BizEvent(true);
 	onShow = new BizEvent(true);
 
 	config = {
-		id: '',
+		id: null,
 		title: '',
 		content: '',
 		modal: false,
@@ -2562,23 +2740,23 @@ class Dialog {
 
 	/**
 	 * @param {Object} config
-	 * @param {String|Null} config.id
-	 * @param {String} config.title
-	 * @param {String} config.content
-	 * @param {Boolean} config.modal
-	 * @param {Number} config.width
-	 * @param {Number} config.height
-	 * @param {Number} config.maxHeight
-	 * @param {Boolean} config.moveAble
-	 * @param {Array} config.buttons
-	 * @param {Boolean} config.buttons.default
-	 * @param {String} config.buttons.title
-	 * @param {Function} config.buttons.callback
-	 * @param {Boolean} config.showTopCloseButton
+	 * @param {String|Null} config.id 为对话框指定ID
+	 * @param {String} config.title 对话框标题
+	 * @param {String} config.content 对话框内容，允许提交 {src:"http://"} 格式，渲染为iframe
+	 * @param {Boolean} config.modal 是否为模态对话框
+	 * @param {Number} config.width 宽度
+	 * @param {Number} config.height 高度
+	 * @param {Number} config.maxHeight 最大高度
+	 * @param {Boolean} config.moveAble 是否可以移动
+	 * @param {Array} config.buttons 按钮列表
+	 * @param {Boolean} config.buttons.default 单个按钮对象中是否作为默认按钮（默认聚焦）
+	 * @param {String} config.buttons.title 按钮标题
+	 * @param {Function} config.buttons.callback 按钮点击后回调，缺省为关闭对话框
+	 * @param {Boolean} config.showTopCloseButton 是否显示对话框右上角关闭按钮，如果显示按钮则支持ESC关闭对话框
 	 */
 	constructor(config = {}){
 		this.config = Object.assign(this.config, config);
-		this.id = this.id || 'dialog-' + Math.random();
+		this.config.id = this.config.id || 'dialog-' + Math.random();
 		domConstruct(this);
 		eventBind(this);
 		DialogManager.register(this);
@@ -2732,14 +2910,6 @@ class Dialog {
 	}
 
 	/**
-	 * 获取当前激活的对话框
-	 * @returns {Dialog|null}
-	 */
-	static getCurrentActiveDialog(){
-		return DialogManager.getCurrentActive();
-	}
-
-	/**
 	 * 获取当前页面（iframe）所在的对话框
 	 * @returns {Dialog|null}
 	 */
@@ -2758,13 +2928,6 @@ class Dialog {
 			throw "ID no found in iframe element";
 		}
 		return parent.DialogManager.findById(id);
-	}
-
-	/**
-	 * 关闭全部对话框
-	 */
-	static closeAll(){
-		DialogManager.closeAll(dialog => dialog.close());
 	}
 }
 
@@ -2789,7 +2952,7 @@ const loadImgBySrc = (src)=>{
 	});
 };
 
-const DOM_CLASS = Theme.Namespace+'com-image-viewer';
+const DOM_CLASS = Theme.Namespace + 'com-image-viewer';
 const DEFAULT_VIEW_PADDING = 20;
 const MAX_ZOOM_IN_RATIO = 2; //最大显示比率
 const MIN_ZOOM_OUT_SIZE = 50; //最小显示像素
@@ -2801,7 +2964,7 @@ const ATTR_W_BIND_KEY = 'data-original-width';
 const ATTR_H_BIND_KEY = 'data-original-height';
 
 const BASE_INDEX = Theme.FullScreenModeIndex;
-const OP_INDEX = BASE_INDEX+1;
+const OP_INDEX = BASE_INDEX + 1;
 
 const MODE_SINGLE = 1;
 const MODE_MULTIPLE = 2;
@@ -2840,11 +3003,11 @@ insertStyleSheet(`
 	.${DOM_CLASS} .civ-loading {--loading-size:50px; position:absolute; left:50%; top:50%; margin:calc(var(--loading-size) / 2) 0 0 calc(var(--loading-size) / 2)}
 	.${DOM_CLASS} .civ-loading:before {content:"\\e635"; font-family:"${Theme.IconFont}" !important; animation: ${Theme.Namespace}spin 3s infinite linear; font-size:var(--loading-size); color:#ffffff6e; display:block; width:var(--loading-size); height:var(--loading-size);}
 	.${DOM_CLASS} .civ-img {height:100%; display:block; box-sizing:border-box; position:relative;}
-	.${DOM_CLASS} .civ-img img {position:absolute; left:50%; top:50%; transform: translate(-50%, -50%); box-shadow: 1px 1px 20px #898989; background:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MTZGMjU3QTNFRDJGMTFFQzk0QjQ4MDI4QUU0MDgyMDUiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MTZGMjU3QTJFRDJGMTFFQzk0QjQ4MDI4QUU0MDgyMDUiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmRpZDpGNTEwM0I4MzJFRURFQzExQThBOEY4MkExMjQ2MDZGOCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpGNTEwM0I4MzJFRURFQzExQThBOEY4MkExMjQ2MDZGOCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pg2ugmUAAAAGUExURe7u7v///yjTqpoAAAAoSURBVHjaYmDAARhxAIZRDaMaRjWMaqCxhtHQGNUwqmFUwyDTABBgALZcBIFabzQ0AAAAAElFTkSuQmCC')}
+	.${DOM_CLASS} .civ-img img {position:absolute; left:50%; top:50%; transition:width 0.1s, height 0.1s; transform: translate(-50%, -50%); box-shadow: 1px 1px 20px #898989; background:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MTZGMjU3QTNFRDJGMTFFQzk0QjQ4MDI4QUU0MDgyMDUiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MTZGMjU3QTJFRDJGMTFFQzk0QjQ4MDI4QUU0MDgyMDUiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmRpZDpGNTEwM0I4MzJFRURFQzExQThBOEY4MkExMjQ2MDZGOCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpGNTEwM0I4MzJFRURFQzExQThBOEY4MkExMjQ2MDZGOCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pg2ugmUAAAAGUExURe7u7v///yjTqpoAAAAoSURBVHjaYmDAARhxAIZRDaMaRjWMaqCxhtHQGNUwqmFUwyDTABBgALZcBIFabzQ0AAAAAElFTkSuQmCC')}
 	
 	.${DOM_CLASS}[data-ip-mode="${MODE_SINGLE}"] .civ-nav-btn,
 	.${DOM_CLASS} .civ-nav-list-wrap {display:none;} /** todo **/
-`, Theme.Namespace+'img-preview-style');
+`, Theme.Namespace + 'img-preview-style');
 
 /**
  * 更新导航按钮状态
@@ -2893,10 +3056,10 @@ const scaleFixCenter = ({
  * 绑定图片移动
  * @param img
  */
-const bindImgMove = (img)=>{
+const bindImgMove = (img) => {
 	let moving = false;
 	let lastOffset = {};
-	img.addEventListener('mousedown', e=>{
+	img.addEventListener('mousedown', e => {
 		moving = true;
 		lastOffset = {
 			clientX: e.clientX,
@@ -2906,12 +3069,12 @@ const bindImgMove = (img)=>{
 		};
 		e.preventDefault();
 	});
-	['mouseup', 'mouseout'].forEach(ev =>{
-		img.addEventListener(ev, e=>{
+	['mouseup', 'mouseout'].forEach(ev => {
+		img.addEventListener(ev, e => {
 			moving = false;
 		});
 	});
-	img.addEventListener('mousemove', e=>{
+	img.addEventListener('mousemove', e => {
 		if(moving){
 			img.style.marginLeft = dimension2Style(lastOffset.marginLeft + (e.clientX - lastOffset.clientX));
 			img.style.marginTop = dimension2Style(lastOffset.marginTop + (e.clientY - lastOffset.clientY));
@@ -2923,7 +3086,7 @@ const bindImgMove = (img)=>{
  * 显示图片
  * @param {Number} img_index
  */
-const showImgSrc = (img_index = 0)=>{
+const showImgSrc = (img_index = 0) => {
 	let imgSrc = IMG_SRC_LIST[img_index];
 	let loading = PREVIEW_DOM.querySelector('.civ-loading');
 	let err = PREVIEW_DOM.querySelector('.civ-error');
@@ -2931,7 +3094,7 @@ const showImgSrc = (img_index = 0)=>{
 	img_ctn.innerHTML = '';
 	show(loading);
 	hide(err);
-	loadImgBySrc(imgSrc).then(img=>{
+	loadImgBySrc(imgSrc).then(img => {
 		setStyle(img, scaleFixCenter({
 			contentWidth: img.width,
 			contentHeight: img.height,
@@ -2976,8 +3139,8 @@ const constructDom = () => {
 	`, document.body);
 
 	//bind close click & space click
-	PREVIEW_DOM.querySelector('.civ-closer').addEventListener('click',destroy);
-	PREVIEW_DOM.querySelector('.civ-ctn').addEventListener('click', e=>{
+	PREVIEW_DOM.querySelector('.civ-closer').addEventListener('click', destroy);
+	PREVIEW_DOM.querySelector('.civ-ctn').addEventListener('click', e => {
 		if(e.target.tagName !== 'IMG'){
 			destroy();
 		}
@@ -2985,12 +3148,16 @@ const constructDom = () => {
 
 	//bind navigate
 	if(CURRENT_MODE === MODE_MULTIPLE){
-		PREVIEW_DOM.querySelector('.civ-prev').addEventListener('click', ()=>{switchTo(true);});
-		PREVIEW_DOM.querySelector('.civ-next').addEventListener('click', ()=>{switchTo(false);});
+		PREVIEW_DOM.querySelector('.civ-prev').addEventListener('click', () => {
+			switchTo(true);
+		});
+		PREVIEW_DOM.querySelector('.civ-next').addEventListener('click', () => {
+			switchTo(false);
+		});
 	}
 
 	//bind scroll zoom
-	PREVIEW_DOM.querySelector('.civ-ctn').addEventListener('mousewheel', e=>{
+	PREVIEW_DOM.querySelector('.civ-ctn').addEventListener('mousewheel', e => {
 		zoom(e.wheelDelta > 0 ? 1.2 : 0.8);
 		e.preventDefault();
 		return false;
@@ -3003,7 +3170,7 @@ const constructDom = () => {
 	document.body.addEventListener('keydown', onKeyDown);
 };
 
-const onKeyDown = (e)=>{
+const onKeyDown = (e) => {
 	if(e.key === 'Escape'){
 		destroy();
 	}
@@ -3016,14 +3183,17 @@ const onKeyDown = (e)=>{
 };
 
 let resize_tm = null;
-const onWinResize = ()=>{
+const onWinResize = () => {
 	resize_tm && clearTimeout(resize_tm);
-	resize_tm = setTimeout(()=>{
+	resize_tm = setTimeout(() => {
 		resetView();
 	}, 50);
 };
 
-const destroy = ()=>{
+/**
+ * 销毁组件
+ */
+const destroy = () => {
 	if(!PREVIEW_DOM){
 		return;
 	}
@@ -3033,7 +3203,10 @@ const destroy = ()=>{
 	document.body.removeEventListener('keydown', onKeyDown);
 };
 
-const resetView = ()=>{
+/**
+ * 重置视图
+ */
+const resetView = () => {
 	let img = PREVIEW_DOM.querySelector('.civ-img img');
 	if(!img){
 		return;
@@ -3046,10 +3219,15 @@ const resetView = ()=>{
 		containerHeight: container.offsetHeight,
 		spacing: DEFAULT_VIEW_PADDING
 	}));
-	setStyle(img, {marginLeft:0, marginTop:0});
+	setStyle(img, {marginLeft: 0, marginTop: 0});
 };
 
-const switchTo = (toPrev = false)=>{
+/**
+ * 图片切换
+ * @param {Boolean} toPrev 是否切换到上一张
+ * @return {boolean}
+ */
+const switchTo = (toPrev = false) => {
 	let total = IMG_SRC_LIST.length;
 	if((toPrev && IMG_CURRENT_INDEX === 0) || (!toPrev && IMG_CURRENT_INDEX === (total - 1))){
 		return false;
@@ -3063,7 +3241,7 @@ const switchTo = (toPrev = false)=>{
  * 缩放
  * @param {Number} ratioOffset 缩放比率(原尺寸百分比）
  */
-const zoom = (ratioOffset)=>{
+const zoom = (ratioOffset) => {
 	let img = PREVIEW_DOM.querySelector('.civ-img img');
 	let origin_width = img.getAttribute(ATTR_W_BIND_KEY);
 	let origin_height = img.getAttribute(ATTR_H_BIND_KEY);
@@ -3072,7 +3250,7 @@ const zoom = (ratioOffset)=>{
 	let height = parseInt(img.style.height, 10) * ratioOffset;
 
 	//zoom in ratio limited
-	if(ratioOffset > 1 && width > origin_width && ((width / origin_width)>MAX_ZOOM_IN_RATIO || (height / origin_height)>MAX_ZOOM_IN_RATIO)){
+	if(ratioOffset > 1 && width > origin_width && ((width / origin_width) > MAX_ZOOM_IN_RATIO || (height / origin_height) > MAX_ZOOM_IN_RATIO)){
 		console.warn('zoom in limited');
 		return;
 	}
@@ -3108,7 +3286,7 @@ const init = (mode, imgSrcList, startIndex = 0) => {
  * 显示单张图片预览
  * @param imgSrc
  */
-const showImgPreview = (imgSrc)=>{
+const showImgPreview = (imgSrc) => {
 	init(MODE_SINGLE, [imgSrc]);
 };
 
@@ -3122,23 +3300,33 @@ const showImgListPreview = (imgSrcList, startIndex = 0) => {
 };
 
 /**
- * 通过绑定图片节点显示图片预览
- * @param {String} imgSelector
+ * 通过绑定节点显示图片预览
+ * @param {String} nodeSelector 触发绑定的节点选择器，可以是img本身节点，也可以是其他代理节点
  * @param {String} triggerEvent
+ * @param {String|Function} srcFetcher 获取大图src的选择器，或者函数，如果是函数传入第一个参数为触发节点
  */
-const bindImgPreviewViaSelector = (imgSelector='img', triggerEvent='click')=>{
-	let images = document.querySelectorAll(imgSelector);
+const bindImgPreviewViaSelector = (nodeSelector = 'img', triggerEvent = 'click', srcFetcher = 'src') => {
+	let nodes = document.querySelectorAll(nodeSelector);
 	let imgSrcList = [];
-	if(!images.length){
+	if(!nodes.length){
 		console.warn('no images found');
 		return;
 	}
-	Array.from(images).forEach((img,idx)=>{
-		imgSrcList.push(img.getAttribute('src'));
-		img.addEventListener(triggerEvent, e=>{
-			if(images.length > 1){
+	Array.from(nodes).forEach((node, idx) => {
+		switch(typeof(srcFetcher)){
+			case 'function':
+				imgSrcList.push(srcFetcher(node));
+				break;
+			case 'string':
+				imgSrcList.push(node.getAttribute(srcFetcher));
+				break;
+			default:
+				throw "No support srcFetcher types:"+typeof(srcFetcher);
+		}
+		node.addEventListener(triggerEvent, e => {
+			if(nodes.length > 1){
 				showImgListPreview(imgSrcList, idx);
-			} else {
+			}else {
 				showImgPreview(imgSrcList[0]);
 			}
 		});
@@ -3313,67 +3501,67 @@ let NS = Theme.Namespace + 'tip';
 let TRY_DIR_MAP = [11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 insertStyleSheet(`
-	.${NS}-container-wrap {position:absolute; z-index:11;}
+	.${NS}-container-wrap {position:absolute; z-index:${Theme.TipIndex};}
 	.${NS}-content {border:1px solid #cacaca; border-radius:4px; background-color:#fff; padding:10px; box-shadow:0 0 10px rgba(105, 105, 105, 0.4); max-width:500px; word-break:break-all}
 	.${NS}-arrow {display:block; width:0; height:0; border:7px solid transparent; position:absolute; z-index:1}
 	.${NS}-close {display:block; overflow:hidden; width:15px; height:20px; position:absolute; right:7px; top:10px; text-align:center; cursor:pointer; font-size:13px; color:gray;}
 	.${NS}-close:hover {color:black;}
 	
 	/** top **/
-	.${NS}-0, .${NS}-1, .${NS}-11 {padding-top:7px;}
-	.${NS}-11 .${NS}-arrow,
-	.${NS}-0 .${NS}-arrow,
-	.${NS}-1 .${NS}-arrow {top:-5px; margin-left:-7px; border-bottom-color:white}
-	.${NS}-0 .${NS}-arrow-pt,
-	.${NS}-11 .${NS}-arrow-pt,
-	.${NS}-1 .${NS}-arrow-pt {top:-6px; border-bottom-color:#dcdcdc;}
-	.${NS}-11 .${NS}-arrow {left:25%;}
-	.${NS}-0 .${NS}-arrow {left:50%;}
-	.${NS}-1 .${NS}-arrow {left:75%;}
+	${NS}-container-wrap[data-tip-dir-0], .${NS}-container-wrap[data-tip-dir="1"], .${NS}-container-wrap[data-tip-dir="11"] {padding-top:7px;}
+	.${NS}-container-wrap[data-tip-dir="11"] .${NS}-arrow,
+	.${NS}-container-wrap[data-tip-dir="0"] .${NS}-arrow,
+	.${NS}-container-wrap[data-tip-dir="1"] .${NS}-arrow {top:-5px; margin-left:-7px; border-bottom-color:white}
+	.${NS}-container-wrap[data-tip-dir="0"] .${NS}-arrow-pt,
+	.${NS}-container-wrap[data-tip-dir="11"] .${NS}-arrow-pt,
+	.${NS}-container-wrap[data-tip-dir="1"] .${NS}-arrow-pt {top:-6px; border-bottom-color:#dcdcdc;}
+	.${NS}-container-wrap[data-tip-dir="11"] .${NS}-arrow {left:25%;}
+	.${NS}-container-wrap[data-tip-dir="0"] .${NS}-arrow {left:50%;}
+	.${NS}-container-wrap[data-tip-dir="1"] .${NS}-arrow {left:75%;}
 	
 	/** right **/
-	.${NS}-8, .${NS}-9, .${NS}-10 {padding-left:7px;}
-	.${NS}-8 .${NS}-close,
-	.${NS}-9 .${NS}-close,
-	.${NS}-10 .${NS}-close {top:3px;}
-	.${NS}-8 .${NS}-arrow,
-	.${NS}-9 .${NS}-arrow,
-	.${NS}-10 .${NS}-arrow {left:-6px; margin-top:-7px; border-right-color:white}
-	.${NS}-8 .${NS}-arrow-pt,
-	.${NS}-9 .${NS}-arrow-pt,
-	.${NS}-10 .${NS}-arrow-pt {left:-7px; border-right-color:#dcdcdc;}
-	.${NS}-8 .${NS}-arrow {top:75%}
-	.${NS}-9 .${NS}-arrow {top:50%}
-	.${NS}-10 .${NS}-arrow {top:25%}
+	.${NS}-container-wrap[data-tip-dir="8"], .${NS}-container-wrap[data-tip-dir="9"], .${NS}-container-wrap[data-tip-dir="10"] {padding-left:7px;}
+	.${NS}-container-wrap[data-tip-dir="8"] .${NS}-close,
+	.${NS}-container-wrap[data-tip-dir="9"] .${NS}-close,
+	.${NS}-container-wrap[data-tip-dir="10"] .${NS}-close {top:3px;}
+	.${NS}-container-wrap[data-tip-dir="8"] .${NS}-arrow,
+	.${NS}-container-wrap[data-tip-dir="9"] .${NS}-arrow,
+	.${NS}-container-wrap[data-tip-dir="10"] .${NS}-arrow {left:-6px; margin-top:-7px; border-right-color:white}
+	.${NS}-container-wrap[data-tip-dir="8"] .${NS}-arrow-pt,
+	.${NS}-container-wrap[data-tip-dir="9"] .${NS}-arrow-pt,
+	.${NS}-container-wrap[data-tip-dir="10"] .${NS}-arrow-pt {left:-7px; border-right-color:#dcdcdc;}
+	.${NS}-container-wrap[data-tip-dir="8"] .${NS}-arrow {top:75%}
+	.${NS}-container-wrap[data-tip-dir="9"] .${NS}-arrow {top:50%}
+	.${NS}-container-wrap[data-tip-dir="10"] .${NS}-arrow {top:25%}
 	
 	/** bottom **/
-	.${NS}-5, .${NS}-6, .${NS}-7 {padding-bottom:7px;}
-	.${NS}-5 .${NS}-close,
-	.${NS}-6 .${NS}-close,
-	.${NS}-7 .${NS}-close {top:3px;}
-	.${NS}-5 .${NS}-arrow,
-	.${NS}-6 .${NS}-arrow,
-	.${NS}-7 .${NS}-arrow {left:50%; bottom:-6px; margin-left:-7px; border-top-color:white}
-	.${NS}-5 .${NS}-arrow-pt,
-	.${NS}-6 .${NS}-arrow-pt,
-	.${NS}-7 .${NS}-arrow-pt {bottom:-7px; border-top-color:#dcdcdc;}
-	.${NS}-7 .${NS}-arrow {left:30px}
-	.${NS}-5 .${NS}-arrow {left:75%}
+	.${NS}-container-wrap[data-tip-dir="5"], .${NS}-container-wrap[data-tip-dir="6"], .${NS}-container-wrap[data-tip-dir="7"] {padding-bottom:7px;}
+	.${NS}-container-wrap[data-tip-dir="5"] .${NS}-close,
+	.${NS}-container-wrap[data-tip-dir="6"] .${NS}-close,
+	.${NS}-container-wrap[data-tip-dir="7"] .${NS}-close {top:3px;}
+	.${NS}-container-wrap[data-tip-dir="5"] .${NS}-arrow,
+	.${NS}-container-wrap[data-tip-dir="6"] .${NS}-arrow,
+	.${NS}-container-wrap[data-tip-dir="7"] .${NS}-arrow {left:50%; bottom:-6px; margin-left:-7px; border-top-color:white}
+	.${NS}-container-wrap[data-tip-dir="5"] .${NS}-arrow-pt,
+	.${NS}-container-wrap[data-tip-dir="6"] .${NS}-arrow-pt,
+	.${NS}-container-wrap[data-tip-dir="7"] .${NS}-arrow-pt {bottom:-7px; border-top-color:#dcdcdc;}
+	.${NS}-container-wrap[data-tip-dir="7"] .${NS}-arrow {left:30px}
+	.${NS}-container-wrap[data-tip-dir="5"] .${NS}-arrow {left:75%}
 	
 	/** left **/
-	.${NS}-2, .${NS}-3, .${NS}-4 {padding-right:7px;}
-	.${NS}-2 .${NS}-close,
-	.${NS}-3 .${NS}-close,
-	.${NS}-4 .${NS}-close {right:13px; top:3px;}
-	.${NS}-2 .${NS}-arrow,
-	.${NS}-3 .${NS}-arrow,
-	.${NS}-4 .${NS}-arrow {right:-6px; margin-top:-7px; border-left-color:white}
-	.${NS}-2 .${NS}-arrow-pt,
-	.${NS}-3 .${NS}-arrow-pt,
-	.${NS}-4 .${NS}-arrow-pt {right:-7px; border-left-color:#dcdcdc;}
-	.${NS}-2 .${NS}-arrow {top:25%}
-	.${NS}-3 .${NS}-arrow {top:50%}
-	.${NS}-4 .${NS}-arrow {top:75%}
+	.${NS}-container-wrap[data-tip-dir="2"], .${NS}-container-wrap[data-tip-dir="3"], .${NS}-container-wrap[data-tip-dir="4"] {padding-right:7px;}
+	.${NS}-container-wrap[data-tip-dir="2"] .${NS}-close,
+	.${NS}-container-wrap[data-tip-dir="3"] .${NS}-close,
+	.${NS}-container-wrap[data-tip-dir="4"] .${NS}-close {right:13px; top:3px;}
+	.${NS}-container-wrap[data-tip-dir="2"] .${NS}-arrow,
+	.${NS}-container-wrap[data-tip-dir="3"] .${NS}-arrow,
+	.${NS}-container-wrap[data-tip-dir="4"] .${NS}-arrow {right:-6px; margin-top:-7px; border-left-color:white}
+	.${NS}-container-wrap[data-tip-dir="2"] .${NS}-arrow-pt,
+	.${NS}-container-wrap[data-tip-dir="3"] .${NS}-arrow-pt,
+	.${NS}-container-wrap[data-tip-dir="4"] .${NS}-arrow-pt {right:-7px; border-left-color:#dcdcdc;}
+	.${NS}-container-wrap[data-tip-dir="2"] .${NS}-arrow {top:25%}
+	.${NS}-container-wrap[data-tip-dir="3"] .${NS}-arrow {top:50%}
+	.${NS}-container-wrap[data-tip-dir="4"] .${NS}-arrow {top:75%}
 `, Theme.Namespace + 'tip-style');
 
 /**
@@ -3466,14 +3654,15 @@ const updatePosition = function(){
 	let direction = this.option.direction;
 	let width = this.dom.offsetWidth;
 	let height = this.dom.offsetHeight;
-	let px = this.relNode.offsetLeft;
-	let py = this.relNode.offsetTop;
+	let pos = getDomOffset(this.relNode);
+	let px = pos.left;
+	let py = pos.top;
 	let rh = this.relNode.offsetHeight;
 	let rw = this.relNode.offsetWidth;
 	if(direction === 'auto'){
 		direction = calDir.call(this);
 	}
-	this.dom.setAttribute('class', `${NS}-container-wrap ${NS}-${direction}`);
+	this.dom.setAttribute('data-tip-dir',direction);
 	let offset = getDirOffset(direction, width, height, rh, rw);
 	this.dom.style.left = dimension2Style(px + offset[0]);
 	this.dom.style.top = dimension2Style(py + offset[1]);
@@ -3482,13 +3671,16 @@ const updatePosition = function(){
 class Tip {
 	guid = null;
 	relNode = null;
+
+	/** @var {HtmlElement} dom **/
 	dom = null;
 	option = {
 		showCloseButton: false,
-		timeout: 0,
 		width: 'auto',
 		direction: 'auto',
 	};
+
+	_hideTm = null;
 
 	onShow = new BizEvent(true);
 	onHide = new BizEvent(true);
@@ -3526,15 +3718,13 @@ class Tip {
 	 * 去重判断，避免onShow时间多次触发
 	 */
 	show(){
-		console.log('show');
 		show(this.dom);
 		updatePosition.call(this);
-		this.option.timeout && setTimeout(this.hide, this.option.timeout);
 		this.onShow.fire(this);
 	}
 
 	hide(){
-		console.log('hide');
+		console.log('hide call');
 		hide(this.dom);
 		this.onHide.fire(this);
 	}
@@ -3549,12 +3739,22 @@ class Tip {
 		}
 	}
 
+	/**
+	 * 快速显示Tip
+	 * @param {String} content
+	 * @param {HTMLElement} relNode
+	 * @param option
+	 * @returns {Tip}
+	 */
 	static show(content, relNode, option = {}){
 		let tip = new Tip(content, relNode, option);
 		tip.show();
 		return tip;
 	}
 
+	/**
+	 * 隐藏所有Tip
+	 */
 	static hideAll(){
 		for(let i in TIP_COLLECTION){
 			TIP_COLLECTION[i].hide();
@@ -3565,41 +3765,43 @@ class Tip {
 	 * 绑定节点
 	 * @param {String} content
 	 * @param {HTMLElement} relNode
-	 * @param {String} triggerEventType
-	 * @param option
+	 * @param {Object} option
 	 * @return {Tip}
 	 */
-	static bindNode(content, relNode, triggerEventType = 'hover', option = {}){
+	static bindNode(content, relNode, option = {}){
 		let guid = relNode.getAttribute(GUID_BIND_KEY);
-		let obj = TIP_COLLECTION[guid];
-		if(!obj){
-			let tm;
-			let hide = function(){
-				tm = setTimeout(function(){
-					obj && obj.hide();
-				}, 10);
+		let tipObj = TIP_COLLECTION[guid];
+		if(!tipObj){
+			tipObj = new Tip(content, relNode, option);
+			relNode.setAttribute(GUID_BIND_KEY, tipObj.guid);
+			relNode.addEventListener('mouseover', ()=>{
+				tipObj.show();
+			});
+			let tm = null;
+			let hide = ()=>{
+				tm && clearTimeout(tm);
+				tm = setTimeout(()=>{
+					tipObj.hide();
+				}, 100);
 			};
-
-			let show = function(){
-				clearTimeout(tm);
-				obj.show();
+			let show = ()=>{
+				tm && clearTimeout(tm);
+				tipObj.show();
 			};
-
-			obj = new Tip(content, relNode, option);
-			relNode.setAttribute(GUID_BIND_KEY, obj.guid);
-			relNode.addEventListener('mouseover',show);
 			relNode.addEventListener('mouseout', hide);
+			tipObj.dom.addEventListener('mouseout', hide);
+			tipObj.dom.addEventListener('mouseover', show);
 		}
-		return obj;
+		return tipObj;
 	}
 
 	/**
 	 * 通过异步获取数据方式绑定显示Tip
 	 * @param {HTMLElement} relNode
-	 * @param {Promise} dataFetcher
+	 * @param {Function} dataFetcher 返回 Promise 对象
 	 * @param {Object} option
 	 */
-	bindAsync(relNode, dataFetcher, option = {}){
+	static bindAsync(relNode, dataFetcher, option = {}){
 		let guid = relNode.getAttribute(`data-${GUID_BIND_KEY}`);
 		let obj = TIP_COLLECTION[guid];
 		if(!obj){
@@ -3610,7 +3812,7 @@ class Tip {
 					return;
 				}
 				loading = true;
-				dataFetcher.then(rspHtml => {
+				dataFetcher().then(rspHtml => {
 					loading = false;
 					obj.setContent(rspHtml);
 				}, error => {
@@ -3674,4 +3876,4 @@ const Toc = (dom, levelMaps = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']) => {
 	</dl>`, document.body);
 };
 
-export { BLOCK_TAGS, Base64Encode, BizEvent, Dialog, DialogManager, HTTP_METHOD, KEYS, Ladder, MD5, Masker, Net, ONE_DAY, ONE_HOUR, ONE_MINUTE, ONE_MONTH_30, ONE_MONTH_31, ONE_WEEK, ONE_YEAR_365, QueryString, REMOVABLE_TAGS, REQUEST_FORMAT, RESPONSE_FORMAT, TRIM_BOTH, TRIM_LEFT, TRIM_RIGHT, Theme, Thumb, Tip, Toast, Toc, arrayColumn, arrayDistinct, arrayGroup, arrayIndex, base64Decode, base64UrlSafeEncode, between, bindImgPreviewViaSelector, buttonActiveBind, capitalize, convertBlobToBase64, copy, copyFormatted, createDomByHtml, cssSelectorEscape, cutString, decodeHTMLEntities, dimension2Style, domContained, downloadFile, enterFullScreen, entityToString, escapeAttr, escapeHtml, eventDelegate, exitFullScreen, fireEvent, formSerializeJSON, formatSize, frequencyControl, getCurrentScript, getElementValue, getHash, getLibEntryScript, getLibModule, getLibModuleTop, getRegion, getUTF8StrLen, getViewHeight, getViewWidth, guid, hide, highlightText, html2Text, insertStyleSheet, isElement, isInFullScreen, isNum, keepRectCenter, keepRectInContainer, loadCss, loadScript, mergerUriParam, onDocReady, onHover, onReportApi, onStateChange, openLinkWithoutReferer, pushState, randomString, rectAssoc, rectInLayout, regQuote, repaint, resolveFileExtension, resolveFileName, resolveTocListFromDom, round, setHash, setStyle, show, showImgListPreview, showImgPreview, strToPascalCase, stringToEntity, toggle, toggleFullScreen, trans, triggerDomEvent, trim, unescapeHtml, utf8Decode, utf8Encode, versionCompare };
+export { BLOCK_TAGS, Base64Encode, BizEvent, Dialog, DialogManager, HTTP_METHOD, KEYS, Ladder, MD5, Masker, Net, ONE_DAY, ONE_HOUR, ONE_MINUTE, ONE_MONTH_30, ONE_MONTH_31, ONE_WEEK, ONE_YEAR_365, QueryString, REMOVABLE_TAGS, REQUEST_FORMAT, RESPONSE_FORMAT, TRIM_BOTH, TRIM_LEFT, TRIM_RIGHT, Theme, Thumb, Tip, Toast, Toc, arrayColumn, arrayDistinct, arrayGroup, arrayIndex, base64Decode, base64UrlSafeEncode, between, bindImgPreviewViaSelector, buttonActiveBind, capitalize, convertBlobToBase64, copy, copyFormatted, createDomByHtml, cssSelectorEscape, cutString, decodeHTMLEntities, dimension2Style, domContained, downloadFile, enterFullScreen, entityToString, escapeAttr, escapeHtml, eventDelegate, exitFullScreen, fireEvent, formSerializeJSON, formValidate, formatSize, frequencyControl, getCurrentScript, getDomOffset, getElementValue, getHash, getLibEntryScript, getLibModule, getLibModuleTop, getRegion, getUTF8StrLen, getViewHeight, getViewWidth, guid, hide, highlightText, html2Text, insertStyleSheet, isButton, isElement, isInFullScreen, isNum, keepRectCenter, keepRectInContainer, loadCss, loadScript, mergerUriParam, onDocReady, onHover, onReportApi, onStateChange, openLinkWithoutReferer, pushState, randomString, rectAssoc, rectInLayout, regQuote, repaint, resolveFileExtension, resolveFileName, resolveTocListFromDom, round, setHash, setStyle, show, showImgListPreview, showImgPreview, strToPascalCase, stringToEntity, toggle, toggleFullScreen, trans, triggerDomEvent, trim, unescapeHtml, utf8Decode, utf8Encode, versionCompare };
