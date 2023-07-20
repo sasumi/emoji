@@ -1,12 +1,16 @@
-import {Toast} from "./webcom.es.js";
+import {Dialog, Toast} from "./webcom.es.js";
 
 export const copy = (text) => {
 	(async () => {
-		navigator.clipboard.writeText(text).then(() => {
-			Toast.showSuccess('Content Copied: ' + text);
-		}).catch(() => {
-			Toast.showError('Copy Failed');
-		});
+		try {
+			navigator.clipboard.writeText(text).then(() => {
+				Toast.showSuccess('Content Copied: ' + text);
+			}).catch(() => {
+				Toast.showError('Copy Failed');
+			});
+		}catch(err){
+			await Dialog.prompt('复制失败，请使用 Ctrl+C复制', {initValue:text}).catch(e=>{});
+		}
 	})();
 };
 
