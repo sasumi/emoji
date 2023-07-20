@@ -3,7 +3,7 @@ import {copy, scrollToAnchor} from "./util.js";
 import {exportAsImage, showCharContextMenu} from "./char.js";
 import {addCollection} from "./collection.js";
 import {showContextMenu} from "./context.js";
-import {createDomByHtml} from "./webcom.es.js";
+import {createDomByHtml, Toast} from "./webcom.es.js";
 
 let html = '';
 let asideHtml = '<ul>';

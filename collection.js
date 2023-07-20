@@ -1,7 +1,7 @@
 import {copy} from "./util.js";
 import {wrapCharacter} from "./char.js";
 import {showContextMenu} from "./context.js";
-import {createDomByHtml, insertStyleSheet, Toast} from "./webcom.es.js";
+import {createDomByHtml, insertStyleSheet, Toast} from  "./webcom.es.js";
 
 const COLL_KEY = 'collection';
 
