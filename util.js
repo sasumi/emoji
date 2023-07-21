@@ -1,31 +1,19 @@
-import {Dialog, Toast} from "./webcom.es.js";
+import {Dialog, Toast, copy as CopyFn} from "./webcom.es.js";
 
 export const copy = (text) => {
-	(async () => {
-		try {
-			navigator.clipboard.writeText(text).then(() => {
-				Toast.showSuccess('Content Copied: ' + text);
-			}).catch(() => {
-				Toast.showError('Copy Failed');
-			});
-		}catch(err){
-			await Dialog.prompt('复制失败，请使用 Ctrl+C复制', {initValue:text}).catch(e=>{});
+	try{
+		if(!CopyFn(text, true)){
+			throw "内容复制失败";
 		}
-	})();
+		Toast.showSuccess('内容已复制：' + text);
+	}catch(err){
+		Dialog.prompt('复制失败，请使用 Ctrl+C复制', {initValue: text}).catch(e => {});
+	}
 };
 
-export const scrollToAnchor = (name)=>{
+export const scrollToAnchor = (name) => {
 	let n = document.querySelector(`a[name="${name}"]`);
 	if(n){
 		n.scrollIntoView({behavior: 'smooth'});
 	}
-}
-export const matchOrParent = (node, selector) => {
-	while(node){
-		if(node.matches && node.matches(selector)){
-			return node;
-		}
-		node = node.parentNode;
-	}
-	return false;
 }
